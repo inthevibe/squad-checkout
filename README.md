@@ -36,3 +36,6 @@ Before running the application, ensure you have the following installed:
 
    ```bash
    go run cmd/main.go
+3. **Run Tests**:
+   ```bash
+   go test -v ./tests/
