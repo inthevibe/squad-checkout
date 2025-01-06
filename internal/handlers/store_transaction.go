@@ -3,12 +3,13 @@ package handlers
 import (
 	"database/sql"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/rivo/tview"
 	"squad-checkout/internal/models"
 	"squad-checkout/internal/repositories"
 	"squad-checkout/internal/services"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/rivo/tview"
 )
 
 func ShowStoreTransactionForm(app *tview.Application, db *sql.DB, returnHandler func()) {
@@ -20,21 +21,19 @@ func ShowStoreTransactionForm(app *tview.Application, db *sql.DB, returnHandler 
 	form.AddInputField("Description", "", 50, nil, func(text string) {
 		description = text
 	}).
-		AddInputField("Date (YYYY-MM-DD)", "", 10, nil, func(text string) {
+		AddInputField("Date (DD-MM-YYYY)", "", 10, nil, func(text string) {
 			dateStr = text
 		}).
 		AddInputField("Amount (USD)", "", 10, nil, func(text string) {
 			amountStr = text
 		}).
 		AddButton("Save", func() {
-			// Validate and save the transaction
 			transaction, err := validateAndCreateTransaction(description, dateStr, amountStr)
 			if err != nil {
 				showError(app, form, err.Error())
 				return
 			}
 
-			// Save the transaction to the database
 			repo := repositories.NewTransactionRepository(db)
 			service := services.NewTransactionService(repo)
 			if err := service.StoreTransaction(*transaction); err != nil {
@@ -42,7 +41,6 @@ func ShowStoreTransactionForm(app *tview.Application, db *sql.DB, returnHandler 
 				return
 			}
 
-			// Return to the main menu
 			returnHandler()
 		}).
 		AddButton("Cancel", func() {
@@ -53,18 +51,15 @@ func ShowStoreTransactionForm(app *tview.Application, db *sql.DB, returnHandler 
 }
 
 func validateAndCreateTransaction(description, dateStr, amountStr string) (*models.Transaction, error) {
-	// Validate description
 	if len(description) == 0 || len(description) > 50 {
 		return nil, fmt.Errorf("description must be between 1 and 50 characters")
 	}
 
-	// Validate date
-	transactionDate, err := time.Parse("2006-01-02", dateStr)
+	transactionDate, err := time.Parse("02-01-2006", dateStr)
 	if err != nil {
-		return nil, fmt.Errorf("invalid date format (expected YYYY-MM-DD)")
+		return nil, fmt.Errorf("invalid date format (expected DD-MM-YYYY)")
 	}
 
-	// Validate amount
 	var amountUSD float64
 	if _, err := fmt.Sscanf(amountStr, "%f", &amountUSD); err != nil || amountUSD <= 0 {
 		return nil, fmt.Errorf("amount must be a positive number")
@@ -72,21 +67,11 @@ func validateAndCreateTransaction(description, dateStr, amountStr string) (*mode
 
 	// Create the transaction
 	return &models.Transaction{
-		ID:              generateUUID(), // TODO: Implement UUID generation
+		ID:              generateUUID(),
 		Description:     description,
 		TransactionDate: transactionDate,
 		AmountUSD:       amountUSD,
 	}, nil
-}
-
-func showError(app *tview.Application, currentPage tview.Primitive, message string) {
-	modal := tview.NewModal().
-		SetText(message).
-		AddButtons([]string{"OK"}).
-		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-			app.SetRoot(currentPage, true).SetFocus(currentPage)
-		})
-	app.SetRoot(modal, false).SetFocus(modal)
 }
 
 func generateUUID() string {

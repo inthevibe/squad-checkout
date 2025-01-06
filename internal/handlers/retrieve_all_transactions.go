@@ -3,13 +3,14 @@ package handlers
 import (
 	"database/sql"
 	"fmt"
-	"github.com/rivo/tview"
 	"squad-checkout/internal/repositories"
 	"squad-checkout/internal/services"
+	"squad-checkout/internal/utils"
+
+	"github.com/rivo/tview"
 )
 
 func ShowAllTransactions(app *tview.Application, db *sql.DB, returnHandler func()) {
-	// Retrieve all transactions
 	repo := repositories.NewTransactionRepository(db)
 	service := services.NewTransactionService(repo)
 	transactions, err := service.RetrieveAllTransactions()
@@ -18,40 +19,54 @@ func ShowAllTransactions(app *tview.Application, db *sql.DB, returnHandler func(
 		return
 	}
 
-	// Create table and set its properties
-	table := tview.NewTable().
-		SetBorders(true)
+	currencies, err := utils.GetSupportedCurrencies()
+	if err != nil {
+		showError(app, nil, fmt.Sprintf("Failed to fetch supported currencies: %v", err))
+		return
+	}
 
-	// Add headers
-	headers := []string{"ID", "Description", "Date", "Amount (USD)"}
+	table := tview.NewTable()
+	table.SetBorders(true)
+	table.SetTitle(" All Transactions ")
+	table.SetTitleAlign(tview.AlignLeft)
+
+	headers := []string{"ID", "Description", "Date", "Amount (USD)", "Currency", "Converted Amount"}
 	for col, header := range headers {
 		table.SetCell(0, col, tview.NewTableCell(header).
 			SetSelectable(false).
 			SetAlign(tview.AlignCenter).
-			SetTextColor(tview.Styles.SecondaryTextColor))
+			SetTextColor(tview.Styles.SecondaryTextColor).
+			SetBackgroundColor(tview.Styles.PrimitiveBackgroundColor))
 	}
 
-	// Add transaction data
 	for i, transaction := range transactions {
 		row := i + 1
-		table.SetCell(row, 0, tview.NewTableCell(transaction.ID))
-		table.SetCell(row, 1, tview.NewTableCell(transaction.Description))
-		table.SetCell(row, 2, tview.NewTableCell(transaction.TransactionDate.Format("2006-01-02")))
-		table.SetCell(row, 3, tview.NewTableCell(fmt.Sprintf("%.2f", transaction.AmountUSD)))
+		table.SetCell(row, 0, tview.NewTableCell(transaction.ID).SetAlign(tview.AlignLeft))
+		table.SetCell(row, 1, tview.NewTableCell(transaction.Description).SetAlign(tview.AlignLeft))
+		table.SetCell(row, 2, tview.NewTableCell(transaction.TransactionDate.Format("02-01-2006")).SetAlign(tview.AlignCenter))
+		table.SetCell(row, 3, tview.NewTableCell(fmt.Sprintf("%.2f", transaction.AmountUSD)).SetAlign(tview.AlignRight))
+
+		selectedCurrency := currencies[28]
+		exchangeRate, err := utils.GetExchangeRate(selectedCurrency, transaction.TransactionDate)
+		if err != nil {
+			table.SetCell(row, 4, tview.NewTableCell("N/A").SetAlign(tview.AlignCenter))
+			table.SetCell(row, 5, tview.NewTableCell("N/A").SetAlign(tview.AlignRight))
+		} else {
+			convertedAmount := transaction.AmountUSD * exchangeRate
+			table.SetCell(row, 4, tview.NewTableCell(selectedCurrency).SetAlign(tview.AlignCenter))
+			table.SetCell(row, 5, tview.NewTableCell(fmt.Sprintf("%.2f", convertedAmount)).SetAlign(tview.AlignRight))
+		}
 	}
 
-	// Create a list for navigation
 	nav := tview.NewList().
 		AddItem("Back to Main Menu", "", 'b', func() {
-			returnHandler() // Invoke the return handler to go back to the main menu
+			returnHandler()
 		})
 
-	// Create the main layout
 	flex := tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(table, 0, 9, false). // Set the table not to grab focus
-		AddItem(nav, 3, 1, true)     // Set the nav list to grab focus
+		AddItem(table, 0, 9, false).
+		AddItem(nav, 3, 1, true)
 
-	// Set the focus explicitly to the navigation list
 	app.SetRoot(flex, true).SetFocus(nav)
 }

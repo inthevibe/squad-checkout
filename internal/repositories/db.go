@@ -3,6 +3,7 @@ package repositories
 import (
 	"database/sql"
 	"fmt"
+
 	_ "modernc.org/sqlite"
 )
 
@@ -12,7 +13,6 @@ func InitDB() (*sql.DB, error) {
 		return nil, fmt.Errorf("failed to open database: %v", err)
 	}
 
-	// Create the transactions table if it doesn't exist
 	query := `
     CREATE TABLE IF NOT EXISTS transactions (
         id TEXT PRIMARY KEY,

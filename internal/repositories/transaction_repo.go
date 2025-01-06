@@ -43,7 +43,6 @@ func (r *TransactionRepository) FindByID(id string) (*models.Transaction, error)
 		return nil, fmt.Errorf("failed to retrieve transaction: %v", err)
 	}
 
-	// Parse the transaction date
 	transaction.TransactionDate, err = time.Parse(time.RFC3339, dateStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse transaction date: %v", err)
@@ -71,7 +70,6 @@ func (r *TransactionRepository) FindAll() ([]models.Transaction, error) {
 			return nil, fmt.Errorf("failed to scan transaction: %v", err)
 		}
 
-		// Parse the transaction date
 		transaction.TransactionDate, err = time.Parse(time.RFC3339, dateStr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse transaction date: %v", err)

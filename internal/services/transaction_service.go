@@ -18,9 +18,9 @@ func (s *TransactionService) StoreTransaction(transaction models.Transaction) er
 }
 
 func (s *TransactionService) RetrieveTransaction(id string) (*models.Transaction, error) {
-	// TODO: Implement retrieve transaction logic
-	return nil, nil
+	return s.repo.FindByID(id)
 }
+
 func (s *TransactionService) RetrieveAllTransactions() ([]models.Transaction, error) {
 	return s.repo.FindAll()
 }
