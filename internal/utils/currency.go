@@ -18,7 +18,7 @@ type Currency struct {
 func GetSupportedCurrencies() ([]string, error) {
 	urlStr := "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/od/rates_of_exchange?fields=country_currency_desc&page[size]=300"
 
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := &http.Client{Timeout: 2 * time.Second}
 
 	resp, err := client.Get(urlStr)
 	if err != nil {
@@ -67,7 +67,7 @@ func GetExchangeRate(currency string, date time.Time) (float64, error) {
 		ApiURL, encodedCurrency, startDate, dateStr,
 	)
 
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := &http.Client{Timeout: 2 * time.Second}
 
 	resp, err := client.Get(urlStr)
 	if err != nil {

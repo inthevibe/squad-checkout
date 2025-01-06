@@ -9,18 +9,16 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	_ "modernc.org/sqlite" // Import the pure Go SQLite driver
+	_ "modernc.org/sqlite"
 )
 
 func TestTransactionService_StoreAndRetrieve(t *testing.T) {
-	// Set up an in-memory SQLite database for testing
 	db, err := sql.Open("sqlite", ":memory:")
 	if err != nil {
 		t.Fatalf("Failed to open database: %v", err)
 	}
 	defer db.Close()
 
-	// Create the transactions table
 	_, err = db.Exec(`
 		CREATE TABLE transactions (
 			id TEXT PRIMARY KEY,
@@ -33,11 +31,9 @@ func TestTransactionService_StoreAndRetrieve(t *testing.T) {
 		t.Fatalf("Failed to create transactions table: %v", err)
 	}
 
-	// Initialize the repository and service
 	repo := repositories.NewTransactionRepository(db)
 	service := services.NewTransactionService(repo)
 
-	// Test data
 	transaction := models.Transaction{
 		ID:              "123e4567-e89b-12d3-a456-426614174000",
 		Description:     "Groceries",
@@ -45,11 +41,9 @@ func TestTransactionService_StoreAndRetrieve(t *testing.T) {
 		AmountUSD:       50.00,
 	}
 
-	// Test storing a transaction
 	err = service.StoreTransaction(transaction)
 	assert.NoError(t, err)
 
-	// Test retrieving the transaction
 	retrievedTransaction, err := service.RetrieveTransaction(transaction.ID)
 	assert.NoError(t, err)
 	assert.Equal(t, transaction.ID, retrievedTransaction.ID)
